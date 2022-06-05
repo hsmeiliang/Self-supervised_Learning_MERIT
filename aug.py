@@ -108,8 +108,12 @@ def aug_feature_dropout(input_feat, drop_percent = 0.2):
     # to dropout ratio p of features input feat
     # the output feature shoud be of dimension "(1-p)*(original dimension)" for each node
     
+    aug_input_feat = copy.deepcopy((input_feat.squeeze(0)))
+    drop_feat_num = int(aug_input_feat.shape[1] * drop_percent)
+    drop_indx = random.sample([i for i in range(aug_input_feat.shape[1])], drop_feat_num)
+    aug_input_feat[:, drop_indx] = 0
 
-    return
+    return aug_input_feat
 
 
 def gdc(A: sp.csr_matrix, alpha: float, eps: float):

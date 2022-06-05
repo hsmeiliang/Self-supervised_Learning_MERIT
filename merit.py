@@ -61,6 +61,25 @@ def set_requires_grad(model, val):
         p.requires_grad = val
 
 
+def sim(x, y):
+    z1 = F.normalize(x, dim=-1, p=2)
+    z2 = F.normalize(y, dim=-1, p=2)
+    return torch.mm(z1, z2.t())
+
+
+def contrastive_loss_wo_cross_network(pred_1, pred_2, target):
+    func = lambda x: torch.exp(x)
+    intra_sim = func(sim(pred_1, pred_1))
+    inter_sim = func(sim(pred_1, pred_2))
+    return -torch.log(inter_sim.diag() / (intra_sim.sum(dim=-1) + inter_sim.sum(dim=-1) - intra_sim.diag()))
+
+
+def contrastive_loss_wo_cross_view(pred_1, pred_2, target):
+    func = lambda x: torch.exp(x)
+    cross_sim = func(sim(pred_1, target))
+    return -torch.log(cross_sim.diag() / cross_sim.sum(dim=-1))
+
+
 class MERIT(nn.Module):
     
     def __init__(self, 
@@ -100,6 +119,20 @@ class MERIT(nn.Module):
         # The output should be "the calculated overall contrastive loss of MERIT"
         # Therefore, you should implement your "contrative loss function" first
         # For the CL term, please refer to the released hw powerpoint or the original paper for details
+
+        online_input_1 = self.online_encoder(aug_adj_1, aug_feat_1, sparse)
+        online_input_2 = self.online_encoder(aug_adj_2, aug_feat_2, sparse)
         
+        online_pred_1 = self.online_predictor(online_input_1)
+        online_pred_2 = self.online_predictor(online_input_2)
+
+        with torch.no_grad():
+            target_output_1 = self.target_encoder(aug_adj_1, aug_feat_1, sparse)
+            target_output_2 = self.target_encoder(aug_adj_2, aug_feat_2, sparse)
+        
+        loss_1 = self.beta * contrastive_loss_wo_cross_network(online_pred_1, online_pred_2, target_output_2.detach()) + (1 - self.beta) * contrastive_loss_wo_cross_view(online_input_1, online_input_2, target_output_2.detach())
+        loss_2 = self.beta * contrastive_loss_wo_cross_network(online_pred_2, online_pred_1, target_output_1.detach()) + (1 - self.beta) * contrastive_loss_wo_cross_view(online_input_2, online_input_1, target_output_1.detach())
+
+        loss = 0.5 * (loss_1 + loss_2)
             
-        return 
+        return loss.mean()
