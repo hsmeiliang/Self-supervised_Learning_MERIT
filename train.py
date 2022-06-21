@@ -158,8 +158,8 @@ if __name__ == '__main__':
 
             aug_adj1 = aug.aug_random_edge(ba, drop_percent=drop_edge_rate_1)
             aug_adj2 = bd
-            aug_features1 = aug.aug_feature_dropout(bf, drop_percent=drop_feature_rate_1)
-            aug_features2 = aug.aug_feature_dropout(bf, drop_percent=drop_feature_rate_2)
+            aug_features1 = aug.aug_feature_dropout_2(bf, drop_percent=drop_feature_rate_1)
+            aug_features2 = aug.aug_feature_dropout_2(bf, drop_percent=drop_feature_rate_2)
 
             aug_adj1 = process.normalize_adj(aug_adj1 + sp.eye(aug_adj1.shape[0]))
             aug_adj2 = process.normalize_adj(aug_adj2 + sp.eye(aug_adj2.shape[0]))

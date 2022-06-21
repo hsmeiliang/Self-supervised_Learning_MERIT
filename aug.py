@@ -34,7 +34,7 @@ def aug_random_edge(input_adj, drop_percent = 0.2):
     data = np.ones(len(new_row_idx)).tolist()
     
     new_adj = sp.csr_matrix((data, (new_row_idx, new_col_idx)), shape = input_adj.shape)
- 
+    '''
     row_idx, col_idx = (new_adj.todense() - 1).nonzero()
     no_edges_cells = list(zip(row_idx, col_idx))
     add_idx = random.sample(no_edges_cells, num_drop)    
@@ -44,7 +44,7 @@ def aug_random_edge(input_adj, drop_percent = 0.2):
     data = np.ones(len(row_idx)).tolist()
     
     new_adj = sp.csr_matrix((data, (row_idx, col_idx)), shape = input_adj.shape)
-        
+    '''
     return new_adj
 
 
@@ -111,6 +111,14 @@ def aug_feature_dropout(input_feat, drop_percent = 0.2):
     aug_input_feat = copy.deepcopy((input_feat.squeeze(0)))
     drop_feat_num = int(aug_input_feat.shape[1] * drop_percent)
     drop_indx = random.sample([i for i in range(aug_input_feat.shape[1])], drop_feat_num)
+    aug_input_feat[:, drop_indx] = 0
+
+    return aug_input_feat
+
+def aug_feature_dropout_2(input_feat, drop_percent = 0.2):
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    aug_input_feat = copy.deepcopy((input_feat.squeeze(0)))
+    drop_indx = torch.empty((int(aug_input_feat.shape[1]),), dtype=torch.float32, device= device).uniform_(0, 1) < drop_percent
     aug_input_feat[:, drop_indx] = 0
 
     return aug_input_feat
